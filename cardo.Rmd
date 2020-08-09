@@ -1,0 +1,204 @@
+---
+title: "Project - Cardio Good Fitness"
+author: "Adrian Calvin"
+output:
+  pdf_document: 
+    toc: yes
+    number_sections: yes
+  html_notebook::
+    toc: true
+---
+
+
+\pagebreak
+# Project Objective
+The objective of this report is to explore the Cardio Machine dataset and gain 
+insights to assist in business decisions. This exploration report will consist 
+of the following:
+
+* Importing the dataset in R
+* Identifying customer profiles
+* Understanding the structure of dataset
+* Exploratory data analysis using Graphical exploration and Descriptive statistics
+
+# Assumptions
+The data provided at least somewhat realistically models a simple exercise-machine 
+business in the early 21st century (i.e. people are more fitness minded, the
+internet exists, et. al.)
+
+In addition, it is assumed that the higher the model number, the higher-end the 
+product, and the higher the price.
+
+We will assume the sample is taken from American customers.
+
+For explanatory purposes, we will assign the following prices to each product:
+
+```{r}
+prices <- list()
+prices['TM195'] <- 10
+prices['TM498'] <- 15
+prices['TM798'] <- 20
+prices.table <- data.frame(
+  matrix(c("TM195", 
+           "TM498", 
+           "TM798", 
+           prices['TM195'], 
+           prices['TM498'], 
+           prices['TM798']), nrow = 3))
+names(prices.table) <- c("Product", "Price")
+prices.table
+```
+
+
+# Data Import
+```{r}
+# Import Libraries
+suppressMessages(library(lubridate))
+suppressMessages(library(dplyr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(scales))
+suppressMessages(library(gridExtra))
+suppressMessages(library(corrplot))
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+
+# Import Data
+cardio <- read.csv("CardioGoodFitness.csv")
+```
+\pagebreak
+
+# First Impressions of Data
+## Variable Identification
+The purpose of this section is to get basic familiarity with the data set's character.
+
+### Dimensions
+
+```{r}
+dim(cardio)
+```
+
+### Head
+```{r}
+head(cardio)
+```
+
+### Summary
+```{r}
+summary(cardio)
+```
+
+**Key Take-away**
+
+<p>
+_This sample appears to be substantially better educated the 
+general population_.
+</p>v
+
+In 2018, according to the U..S Census Bureau, only 34.98% of the U.S. population
+ (25 and older) is estimated to have attained a bachelor's degree, or higher.  The mean education
+level of the sample is 15.57, indicating that on average, a skew towards higher
+education.  
+
+This makes sense, as the "common sense" method would tell a person that more 
+educated people are more likely to be sensitive to new knowledge that can better
+their well-being.  That being said, I cannot support this 
+conclusion with the data given.
+
+```{r, echo=FALSE}
+
+```
+1. https://en.wikipedia.org/wiki/Educational_attainment_in_the_United_States#General_attainment_of_degrees/diplomas
+\pagebreak
+ 
+# Data Mangling
+ 
+```{r}
+ # Add columns for grouping Income, Age, and Education
+cardio <- mutate(
+  cardio, 
+  IncomeGroup = cut(
+     Income, 
+     breaks   = c(0, 20000-1,30000-1,45000-1,60000-1,100000-1,Inf), 
+     labels   = c("[0-19k)", "[20-30k)", "[30-45k)", "[45-60k)", "[60k-100k)", ">= 100k")),
+  
+  AgeGroup    = cut(Age, breaks = c(17, 19, 25, 29, 36, 59)),
+  
+  EducGroup   = cut(Education, breaks = c(0,12,15,16,99), 
+     labels   = c("High School", "Some College", "Bachelors", "(Some)Grad School")))
+
+# Factorize other columns
+cardio$Gender = as.factor(cardio$Gender)
+cardio$Education     = as.factor(cardio$Education)
+cardio$MaritalStatus = as.factor(cardio$Gender)
+cardio$Product       = as.factor(cardio$Product)
+
+head(cardio)
+```
+\pagebreak
+
+# Customer Profiles
+Below is a break-down of purchases by three criteria: Education, Age, Income, and
+self-perceived fitness level groupings:
+
+ 
+
+## Product Sales by Group
+
+### Education
+
+```{r}
+ggplot(cardio, aes(x   = EducGroup, fill = Product)) + 
+            labs(title = "Product by Education Group", 
+                     x = "Education Group", 
+                     y = "Product Count") + 
+     geom_bar(position = "stack")
+```
+_As education level increases, so do proportion of the more expensive model in 
+terms of sales._
+
+\pagebreak
+
+### Age
+
+```{r}
+ggplot(cardio, aes(x  = AgeGroup, fill = Product)) + 
+           labs(title = "Product by Age Group", 
+                    x = "Age Group", 
+                    y = "Product Count") + 
+    geom_bar(position = "stack")
+```
+_Unsurprisingly, the 19 - 25 age group invests in the most purchases.  Somewhat surprisingly,
+however, the ratio of the mid-range TM498 to high-end TM798s did not have a 
+steady decline with increasing age._
+
+\pagebreak
+
+### Income
+
+```{r}
+ggplot(cardio,  aes(x = IncomeGroup, fill = Product)) + 
+          labs(title  = "Product by Income Group", 
+                   x  = "Income Group", 
+                   y  = "Product Count") + 
+    geom_bar(position = "stack")
+```
+_Predictably, the more expensive model rises in popularity, as a percentage of total sales, as income level rises._
+
+\pagebreak
+
+### Fitness 
+
+```{r}
+ggplot(cardio, aes(x   = Fitness, fill = Product)) + 
+            labs(title = "Product by Fitness Level", 
+                     x = "Fitness Level", 
+                     y = "Product Count") + 
+     geom_bar(position = "stack")
+```
+_This subjective rating of fitness indicates that the more fit a person believed
+their self to be, the more they were willing to pay - at least at the higher levels.
+The fitness level does not seem to have a huge impact on the choice of product at
+average level (3) and below._
+
+\pagebreak
+ 
